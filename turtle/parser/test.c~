@@ -1,0 +1,31 @@
+#include "turtle.h"
+
+int main(int argc, char* argv[]){
+	char str[30] = "X";
+	FILE* fp;
+	Prog p;
+	SDL_Simplewin sw;
+
+	fp = fopen(argv[1], "r");
+	initialiseProg(&p);
+Neill_SDL_Init(&sw);
+	Neill_SDL_SetDrawColour(&sw, 255, 255, 255);
+	readFile(&p, fp);	
+
+	prog(&p, &sw);
+		
+	do{
+SDL_RenderPresent(sw.renderer);
+      SDL_UpdateWindowSurface(sw.win); 
+      Neill_SDL_Events(&sw);
+	}while(!sw.finished);
+	return 0;
+}
+
+
+
+
+
+
+
+/*change argument from char* to prog);*/

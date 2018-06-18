@@ -1,0 +1,49 @@
+If there's no argv file input (argc ==1), a random file called aAaAaA.txt will be created and automatically interpreted it. 
+(called aAaAaA to avoid overwriting common same named files in the computer)
+
+auto.c contains the code that are responsible for outputting a random turtle script.
+
+Since it is random, most of the time, the interpreted text files are usually not interesting, some of the time, it is just one line. 
+I tried to change it by changing different likelihood for each instructions. I also did a few 
+To change that, I would have to not make it random, but that defeat the whole point of this random turtle text file generator.
+
+Through all the assignments, I had to read pre-written text files, but I have not had to output a textfile through my code.
+Therefore for this extension, I want to practice that.
+
+My extension will output a turtle file that complies with all the turtle grammar given for the assignment.
+The output will be a random turtle file, so it will be different everytime.
+
+Since if the output file is truly random, even if it complies to grammar, it may not have a meaningful output. 
+(e.g. making a -ve do loop, putting nothing inside the do loop, calling FD A when A is not set, polish notatioin may not make sense)
+
+Therefore, I did some fine tuning and played around with it to make the output file more meaningful and are more likely to ouput something that have some output in the SDL.
+
+For example, for <POLISH>, instead of randomly going through the <POLISH> expression, I chose a random number to decide how many numbers to use. 
+This allows me to know how many <OP> I need to make a meaningful <POLISH> expression. 
+As at least 2 numbers has to come before one <OP> for the expression to make sense, I decided I should put all the random numbers, then the <OP> afterwards.
+
+This is a design decision, and as result, the <POLISH> part is not recursive.
+I commented out the part which made the <POLISH> random (but does not make sense in many cases).
+
+Another design decision I made is for the random <VARNUM>.
+Although grammar allow and <VARNUM>, but it will be quite pointless to keep calling a variable that are not initialised in the first place.
+Therefore I only call <VAR> that has been set earlier.
+This is done by keeping track of it, and making it not really 'random'. 
+
+As there are too many potential issues with usage of varnum, especially in the <DO> part of the grammar, I decided for <DO>, for X TO Y, X will always be 1, and Y will be >1.
+
+Another design decision I made is so that it is impossible to have output file like '{ }' where there's nothing inside the text file but the brackets.
+I do this by increasing he random number range as it goes along, so that at the first few passes of the function, '}' is not a possible output.
+As it goes along, the } output will be more and more likely as the weight shifts.
+This is part of my design decision as I don't want the file to be too long.
+
+Different <INSTRUCTION> all has different weights, with FD being the most likely one to be outputted.
+I chose the weight so that it is more likely that the output text file will print out something in the SDL interpreter.
+However, it is impossible to guarentee that as I still want the output text file to be random to some extent. 
+
+Despite all these, it is still likely in many cases that there will be useless statements (e.g. <SET> at the very end and not called, <DO> with nothing inside).
+It was not possible to eliminate all these without restricting the original grammar heavily.
+As these issues will not affect the SDL output, I chose to ignore it and allow it.
+
+To make things more visual, the randomly generated file will be automatically ran by the interperter I wrote in part 2.
+

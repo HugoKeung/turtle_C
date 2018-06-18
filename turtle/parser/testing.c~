@@ -1,0 +1,171 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#define MAXIMUMTOKENS 10
+#define MAXTOKENSIZE 7
+
+enum boolean {false, true};
+
+struct prog{
+   char wds[MAXIMUMTOKENS][MAXTOKENSIZE];
+   int cw;
+}; typedef struct prog Prog;
+
+void initialiseProg(Prog* p){
+	int i, j;
+for (j = 0; j < MAXIMUMTOKENS; j++){
+	for (i=0; i < MAXTOKENSIZE; i++){
+		p->wds[j][i] = '\0';
+	}
+}
+
+	p->cw = 0;
+}
+void readFile(Prog* p, FILE* fp){
+	 
+	int i = 0;
+	if (fp==NULL){
+		printf("No such file");
+	}
+/*all words got put into p->wds*/
+	while(fscanf(fp, "%s", p->wds[i++]) != EOF && i < MAXIMUMTOKENS);
+}
+int isVar(char* str){
+	/*char c = str[0];*/
+/*cannot be <VAR> if longer than 1 character,
+therefore only str[0] is relevant*/
+	if (lengthCheck(str)==false){
+		return false;
+	}
+	   
+/*check if upper case AND alphabet*/
+	if (isupper(str[0])){
+		return true;
+	}
+	else return false;
+
+}
+
+/*check if is number*/
+int isNum(char* str){
+	int length = strlen(str);
+	int i;
+	int cnt = 0;
+
+/*cnt for number of '.'*/
+
+	for (i = 0; i < length; i++){
+		if (isdigit(str[i])== false){
+/*if '.' used inappropriately, return false*/
+			if (str[i] == '.' && cnt < 1 && length >1){
+				cnt++;
+			}
+			else return false;
+		}
+	}
+	
+	return true;
+}
+
+/*<VARNUM> grammar
+number|<VAR>
+*/
+int isVarNum(char* str){
+	if(isNum(str)== false && isVar(str)== false){
+		return false;
+	}
+	return true;
+}
+
+/*return the direction (or 'invalid' if is not a direction)*/
+int isDirection(char* str){
+	
+	if (strcmp(str, "FD")==0 || strcmp(str, "RT")==0 || strcmp(str, "LT")==0){
+		return true;
+	}
+
+	else return false;
+
+}
+
+void prog(Prog* p){
+
+	p->cw = 0;
+	if(strcmp(p->wds[0], "{") != 0){
+		printf("Program didn't start with '{'\n");
+	}
+	printf("%d \n", p->cw);
+	p->cw = p->cw+1;
+	printf("%d \n", p->cw);
+p->cw = p->cw+1;
+p->cw = p->cw+1;
+	if(p->wds[p->cw][0] != '\0'){
+		printf("Excess characters at the end\n");
+		return;
+	}
+	printf("all good\n");
+	
+	return;
+}
+int lengthCheck(char* str){
+	int length = strlen(str);
+	if (length>1){
+		return  false;
+	}
+	return true;
+}
+ void nextWord(Prog* p){
+       p->cw = p->cw+1;
+       printf("%d \n", p->cw);
+    }
+
+void instruction(Prog* p){
+
+
+/*<FD> <LT> <RT> grammar
+"FD"<VARNUM>
+*/
+	if (isDirection(p->wds[p->cw]) == 1){	
+		p->cw = p->cw+1;
+		if (isVarNum(p->wds[p->cw]) == 0){
+			printf("Expected variable/number");
+		}
+	}
+else	{printf("Expected instructions");
+}		p->cw = p->cw+1;
+
+	
+}
+int main(int argc, char* argv[]){
+	char str[30] = "--1";
+	FILE* fp;
+	Prog p;
+double number;
+char* rubbish;
+number = strtod(str, &rubbish);
+
+printf("%f \n", number);
+
+if (rubbish[0] != '\0'){
+printf("not valid\n");
+}
+printf("%s ", rubbish);
+/*
+fp = fopen(argv[1], "r");
+
+initialiseProg(&p);
+
+readFile(&p, fp);
+
+instruction(&p);*/
+
+			return 0;
+}
+
+
+
+
+
+
+
+/*change argument from char* to prog);*/

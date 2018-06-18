@@ -1,0 +1,353 @@
+#declare what changed after tested all parser
+#declare the recursive call after
+
+Testing strategy
+
+Function that is being tested (and the function it called) is copy and pasted to the top of a empty test.c to test it individually.
+The main then call the function and print out the necessary output.
+printf are used to print out the return value (if there's one).
+
+line before 'XXXXXXXXXXXX' are the tests for part 1, line after are tests done after addition of code or modifications that were made for part 2.
+-------------------------------------------------------------------------------------------------------------------------------
+The following functions are tested first in the order as stated below.
+These are tested first as the arguments for these functions are string. Therefore they can be hard coded into main easily.
+These are also very short functions. Excluding the variables initialisation, they are all only 5 lines or so.
+
+int isNum(char* str)
+This funciton should return 0 if it is not a number, 1 otherwise.
+This function use isdigit to test each character in the string seperately. 
+At first, this seems like it should work fine, but '1.5' and other decimal numbers caused error.
+I had to expand it as it did not take account on numbers with decimal points.
+Therefore I changed it so that it will allow '.' input as well. 
+But it only allows 1 '.', as it will bot be a valid number if there are 2 '.' in a number.
+I also set out a special case so that '.' by itself will give an error as well, as it is also not a valid number. 
+'.1' and '1.' are allowed though, as it just assume that they are 0.1 and 1.0 respectively.
+Input tested included various characters and numbers, including string mixed with characters and decimal number. (e.g. '1.a').
+Result showed that invalid numbers (e.g. '1..1', '2.a') gave out a negative result, as expected.
+Upon further testing, I realised that my function did not allow negative number to parse properly.
+I had to allow '-' at the start but not '-' stand alone or at any position other than the first. 
+++++++++++
+As there are too many edge cases, I explored a different way to do it. I finally decided to use strtod function which is a stdlib function to do it.
+I hardcoded the string and tested strings like 'a1', -1..', '.-1', '1-' etc.
+That's because these are the more likely to failed ones as they include '.' and '-' but not in a grammatically correct way.
+They did not passed the test. '--1' also did not passed the test, as it is not a valid number.
+Test showed that '-.1', '-1.' and other valid experssions all passed the test as intended.
+
+int isOp(char* str)
+This function should return 0 if it is not a <OP>, and 1 otherwise.
+This function used strcmp to check if the string is a <OP> or not.
+Input tested include all the <OP> (e.g. "+", "-", "*", "/"), and various other characters next to the <OP> (e.g. "+-", "+1").
+As expected, strcmp worked fine, and only the 4 <OP> gave out positive result.
+
+int isVar(char* str)
+This function should return 1 if it is [A-Z], and 0 otherwise.
+As a variable can only be [A-Z] single character, if strlen is over 1,it is not a Var.
+There are 2 main lines in this function. 
+The second one is calling isupper, to check if the str[0] is a upper cased alphabet or not.
+strlen was checked before isUpper, as we have to make sure that strings like 'Aa' that may pass our isupper test are eliminated first.
+Input tested included numbers, special characters, various upper and lower cased alphabet with various length and a mix of both. (e.g. 'Aa', 'AB', '1', 'A1')
+As expected, only [A-Z] passed the test.
+
+int isVarNum(char* str)
+This function should return 1 if it is a variable or a number.
+isNum and isVar, that are tested above, are both called in this function. 
+They are used in an if statement, that if isNum and isVar are false, then it should give a negative result.
+Input tested are the same as the ones tested in isNum and isVar.
+As expected, both numbers and [A-Z] passed the test. String with a mix of both did not passed.
+
+int isDirection(char* str)
+This function should return 1 if it is a valid direction (FD, LT, RT), and 0 otherwise.
+strcmp was used to test if the string was a direction or not.
+Input tested include all the valid directions, and a few other characters and numbers mixed with the valid direction.
+As expected, only the 3 valid direction gave out a positive result.
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+When doing the interpretation of the parser, I realised that a 1 and 0 respond from isDirection was not enough.
+I had to change it so that each direction give out a specific number, and 0 if it is not a direction.
+To test this, I wrote a few text files that contained valid directions, and some that looked like a valid direction (e.g. 'fd', 'FD1', '1FD')
+I also checked if a series of directions will give out false result (e.g. 'FD RT').
+As expected, the number returned is the direction associated with it. The second direction is also ignored as expected.
+0 (invalid) output was printed out when the first string was not a valid direction. This means that this function passed our test.
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+The follwing instructions involves using the struct Prog that I made.
+I copy and pasted the struct on top of the test.c to test it.
+--------------------------------------------------------------------------------------------------------------------------------------
+
+void initialiseProg(Prog* p)
+This function set the first character of every wds in the array to '\0' and set the cw counter to 0.
+I first tested if the cw counter is properly set to 0, by doing printf("%d ", p.cw); before and after the intialiseProg is called.
+The result showed that before intialiseProg was called, the number printed was '4195813', after it was called, the number printed was '0'.
+I then tested if the first characters are all set to NULL. If the first character was set to NULL, printf will show nothing.
+I wrote a for loop to print out all the words stored in p.wds.
+    for (i = 0 ; i < MAXIMUMTOKENS; i++){
+      printf("%s \n", p.wds[i]);
+    }
+Before initialiseProg, it printed out a few weird characters. 
+After initialiseProg, as expected, it only printed out new line and nothing else.
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Few things were added for the Prog struct for part 2.
+To check if it is working correctly, I compiled my code with -g flag and test it through gdb using the 'print' command in gdb.
+First I printed out the var array after the initialiseProg function was called. 
+It showed that all numbers in the array are all below e-310, which is essentially 0.
+I then printed out oldX, oldY before and after the function was called. They went from 4203280 and 0 to 400 and 300 respectively.
+The angle and draw variable are also initialised correctly when I tested it using the print command in gdb.e input is 
+
+void readFile(Prog* p)
+This function reads in a text file and put the words into p.wds in order.
+First, I tested if the error checked worked. It did worked as it gave out an error when I did not entered an argument when I was running my program.
+It also gave out an error when I mistyped the file name.
+I made a file which contained text with different symbols, chatracters and numbers mixed together. 
+To test if the words in the text files are correctly put into the p.wds array, I used the same for loop that I used to test the initaliseProg function.
+First I printed out p.wds after initialiseProg (which is just new lines), then I printed out p.wds after the readFile function was called.
+The program printed out the content in the text file. The phrases in the text file that are seperated with a space are printed out individually on the screen.
+The diffrent phrase are seperated by a new line as expected.
+
+---------------------------
+Most of the following functions are called recursively, or they call each other.
+I had to delete the recursive line or the line which called the other function to test it first.
+Most of the lines are very trivial, as they are strcmp or different char comparisons.
+The most likely issue that we will face is that we might missed out on a p->cw = p->cw+1 (or did an extra one), leading to the code trying to parse the wrong word.
+I designed the code so that p->cw = p->cw+1 is called immedately straigt after every word was parsed.
+Also, unless stated specifically, the code below are tested by calling initialiseProg and readFile before running the function being tested.
+The input is textfiles that contain the keywords/phrases that I specified below.
+---------------------------
+
+p->cw = p->cw+1
+This phrase call called multiple times in the code. Therefore we will test this seperately.
+This line moves the cw pointer to the next one.
+To test this, I wrote the following function.
+    void nextWord(Prog* p){
+       p->cw = p->cw+1;
+       printf("%d \n", p->cw);
+    }
+I tested this by first using the initialiseProg function to set everything to default.
+I then called the function I wrote above multiple times.
+At the end of the test, I print out the p.cw outside the nextWord function, to make sure the cw changed outside of the scope.
+The line I used was as following
+    printf("%d \n", p.cw);
+Testing showed that this line did worked, and it was not changing only a copy of cw, but the actual cw that was initalised in the main.
+This was shown as the last number printed inside the nextWord function was the same as the number printed at the end of the main.
+
+void prog(Prog* p)
+This function followed the <MAIN> grammar, which is 
+    "{"<INSTRUCTLIST>
+When I tested this function, I left out the follwing line:
+    instructlist(p);
+strcmp was used to test if the text file started with '{'.
+To test it, I made several text files that started with '{' and some with no space behind the '{'. 
+Only the ones with '{' with a space did not print out an error message.
+p->cw = p->cw+1 was called after this line, as '{' is read and we can move on to the next character.
+The last line of this function tested if p->cw is NULL. This is to check if there are excess characters after the whole thing is parsed.
+To test this line, again, short text files are made. It is expected that without the instructlist(p), that p->cw will be 1 when this line is called.
+That means the program expect 1 word in this case.
+Therefore I tested files with 2 or more words, and some with 1 words.
+As expected, only those files with 1 words didn't gave out the excess character message. 
+I went further by adding a 2 lines of p->cw = p->cw+1 after the intial one. 
+The result showed that only files with 3 characters passed that test. That was to be expected.
+
+void instructlist(Prog* p)
+This function followed the <INSTRUCTLIST> grammar, which is
+    <INSTRUCTION><INSTRUCTLIST> | "}"
+This function called 2 different functions.
+It called a function called instruction, which we haven't tested yet, and it also called instructlist (itself) recursively.
+We first tested it without the 2 lines that called other functions.
+That leaves us with only 1 line, which was using strcmp to test the cw with '}'.
+p->cw = p->cw+1 was called after this line as '}' was read and we can move on to the next character.
+As '}' terminates the <INSTRUCTLIST> grammar, return was called after that.
+The only other potential issue here is if the p->cw is tracking correctly along the parsing route. 
+Again, as stated above, I avoided that error by calling p->cw = p->cw+1 every time after every word is parsed.
+I put the "}" parsing before the <INSTRUCTION><INSTRUCTLIST> so that they will only be called when the <INSTRUCTLIST> of the current scope is still ongoing.
+
+void instruction(Prog* p)
+This function followed the <INSTRUCTION> grammar, which is 
+    <FD>|<LT>|<RT>|<DO>|<SET>
+It calls 4 different functions, 2 of them which I already tested above.
+isDirection and isVarNum are called in a nested if loop.
+I tested it by testing this nested if loop seperately.
+I put a printf statement after each if condition, so I know if both if conditions are ran.
+First I used readFile to read the text file I created, then ran the simplified instruction function (which only contained the nested if loop).
+Result showed that both conditions were ran if isDirection is true. Only isDirection is ran if the first word is not valid.
+That is to be expected.
+Testing text file included phrases like "FD 10", "FD10", "fd 10", "10 FD" which looked similar to the valid grammar.
+As expected, only the first phrase of the above passed the test.
+I then expanded the testing function, so that it included the strcmp for "DO" and "SET" as the grammar required.
+One potential pitfall here is that is that it may not exit the function when either conditions are met. 
+To make sure it was working properly, I tested phrases like "SET" and "DO" seperately, and also together.
+Test showed that the function do ignore the other if condition if the previous condition was satisfied.
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+draw function, which is a new function wrote for part 2, was added to this function.
+It is called only when draw = 1 (true), and the direction and variable/number right before are parsed correctly.
+To test this, I put a print statement in place of the draw function.
+Result showed that text files that did not contained direction and variable/number did not printed out the statement inserted.
+vice versa.
+
+void doFunc(Prog* p)
+This function followed the <DO> grammar, which is 
+    "DO" <VAR> "FROM" <VARNUM> "TO" <VARNUM> "{" <INSTRUCTLIST>
+As we did p->cw = p->cw+1 when we before we go into this function, we start parsing with the second token, <VAR>.
+This function calls strcmp and a few functions we tested above in a sequential manner.
+p->cw = p->cw+1 was called everytime after a token was parsed.
+At the end it call the function instructlist as the grammar stated.
+To test it, I wrote a few text files which complies with the rule, and a few which didn't. (e.g. missing out on 1 token, switching the words around).
+As expeceted, only the ones which complies to the rule did not gave out error messages.
+During initial testing, I left out the instructlist function at first, to make sure the sequential if statements are working properly.
+As instructlist above passed the test, I would assume that adding instruclist function will not break the code.
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+3 newly wrote functions (getNum, setVar, startLoop)are added into this function.
+These 3 functions will be tested later on individually.
+The line
+    letter = p->wds[p->cw][0]
+was used to note down which letter(variable) is parsed.
+To test this, I inserted a printf statement right after this line.
+Result showed that all the variables used in the do loop in the text file I created are printed out in the correct order.
+getNum was used right after the variable/number was parsed.
+setVar was used right after getNum was called.
+startLoop was called after the whole <DO> grammar (excluding <INSTRUCTLIST>) was parsed.
+
+void setFunc(Prog* p)
+This function followed the <SET> grammar, which is 
+    "SET" <VAR> ":=" <POLISH>
+polish function was called at the very end of the function before the return statement.
+During initial testing, I left out the polish function line.
+Similar to the doFunc tested above, setFunc is also just a series of if statement.
+To test it, I wrote a few text files which complies with the rule, and a few which didn't. (e.g. missing out on 1 token, switching the words around).
+As expeceted, only the ones which complies to the rule did not gave out error messages.
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+2 new functions are added to this function. setVar, Pop and initaliseStack.
+They are tested later on individually.
+initialiseStack was called at the start of the function.
+setVar was called at the very end of the function.
+Pop was called as part of the setVar's argument.
+
+void polish(Prog* p)
+This function followed the <POLISH> grammar, which is 
+    <OP><POLISH> | <VARNUM><POLISH> | ";"
+This function called itself recursively during the first 2 if conditions in the grammar as seen above. 
+To test this function, I wrote a few files with polish grammar that compiles to the rule. (e.g. "1 A 3 + / * +", ", "3 23 1.2", "+ - 12")
+I also wrote a few that did not compile with the rule (e.g. "123+", "FD 10" etc.).
+As expected, only those that compiled with the rule did not give me error message.
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+2 new function are added to this function. Push and calculate.
+Push is called after a number/variable is parsed.
+calculate is called after a operator is parsed.
+They are tested later on individually.
+
+--------------------------------------------------------
+At this point, most part of the functions are tested. 
+Some other functions that call other functions or are called recursively are not fully tested.
+To achieve a full test, I wrote a few files that complie with the overall grammar rule, and a few that did not.
+I tried to make that the files that did not complie to the rule are very subtle and and grammar related.
+I especially focused on the tokens that are called during/after the bit where the functions are called recursively and when other functions are called.
+For example, 
+    putting a number after ';'
+    putting a extra/missing out on a bracket after the DO loop
+    putting extra number after the DO loop
+
+None of the subtly invalid text files gave a positive result.
+Therefore I am confident that my code is working 100% correctly, compling to the grammar, and nothing more.
+To double check, I compiled my code with -g flag so I can step through it step by step in gdb. 
+It showed that tokens are read correctly, one at a time while parsing through the correct relevant function.
+--------------------------------------------------------
+Below are newly wrote function for part 2.
+----------------------------------------------------------------
+
+void setVar(Prog* p, char letter, double n)
+This function only has one line of variable assignment.
+To check that the assignment is at the right place, I hardcoded the argument for letter and n in the argument.
+Content for A printed out as the first thing in the array, B second, C third and so on. That means it is working correctly.
+Since variable and number check are done every time before this function is called, it is unlikely that there will be any special cases.
+
+double getVar(Prog* p, char letter)
+This function has only a single return line.
+I tested it by calling setVar, then getVar afterwards to see if it gave me the input I just put in for setVar argument.
+Result showed that this function did gave me to correct output.
+If no setVar was called beforehand, 0 was returned (which is expected as I defaulted everything to 0 at first).
+Again, the variable was checked by isVar before calling this function, therefore we can be certain that the input will only be of valid input.
+
+double getNum(Prog* p, char* str)
+isVarNum is called everytime before this function is called. Therefore the str input must be a valid input.
+I first tested if a number is correctly returned by hard coding str to a number.
+Then I tested if a variable will contain the number as well, but first calling setVar to set the number, then use getNum to get the number back.
+Result showed that variable or number input as str will both result in a double number return.
+
+void draw(SDL_Simplewin* sw, Prog* p, int direction, double n)
+This function utilise SDL to draw a line if the direction inputted was 'FD'. It changes the angle stored if the direction is 'LT' or 'RT'.
+isDirection and isVarNum are both called before this function was called, therefore we don't have to worry about strange input for direction and n here.
+A few potential problems here may be the double rounding. Therefore I specifically tested for every variable assignment when I was testing this function.
+I used printf statement to test all the lines that involves a double data type seperately.
+The first 'double related' code is 
+    double radian = PI/180;
+printf printed out 0.017453, which is in range of the correct radian value.
+Value of newX and newY are both rounded numbers. I did that by adding 0.5 to the final value to artificially 'round' it when it is turn into an integer.
+To make sure this is correct, I printed out the value before adding 0.5, after adding 0.5, and after force casting it to an integer.
+The result printed out showed that the rounding is working as I expected it to be.
+e.g. 378.786 is rounded to 379 and 349.213 is rounded to 349.
+Next, I tested if the SDL was printing out properly. 
+To test this, I had to call other different functions from neillsdl2.c. e.g. Neill_SDL_Init, Neill_SDL_SetDrawColour etc.
+My test are ran under the assumption that all these functions inside neillsdl2.c were working correctly.
+Through the printf statement I know that the oldX, oldY, newX, newY are all initialised to the correct value.
+To make sure the SDL is printing out correctly, I had to compile the code as a whole to test it. 
+As calculate function was not yet tested, neither is loop, my test code consisted of only FD, LT and RT.
+Originally, a positive FD was going downwards, therefore I had to modify the formula for newY. 
+Also, I could not exit the SDL midway through interpreting it, therefore, I made some modification, adding a if condition around it, so I can exit any time I want.
+After testing, using the same file as before, it showed that the if statement was working correctly.
+Click on mouse or keyboard will allow the SDL to be interrupted and exit.
+
+void startLoop(Prog* p, char letter, int from, int to, SDL_Simplewin* sw)
+This function interpret the do loop by going through the content of the loop for however many times it was required.
+It is a do while loop as everything has to be parsed once, even though if it is a negative loop (i.e. 1 to -1).
+Content inside a negative loop should not be interpreted as they are meaningless, but they stil have to be parsed.
+First, I tested if the setVar is working properly inside the do while loop. I wrote a text file which has a single do loop.
+I do this by printing out the variable everytime setVar is called. This is to test if the <VAR> is reset everytime it loops or not.
+From testing, it showed that the <VAR> increases every time it loops, which is what we wanted.
+Next, I had to test if variables work in a nested do loop. I wrote multiple test files containg nested do loop.
+Result showed that each do loop variables are clearly not interfering with each other.
+Lastly, I tested for exceptional cases. I tested for negative do loop.
+To test if this works, I had to make a test file which has a negative do loop. (as in TO > FROM).
+Inside the negative do loop, I called FD, LT, RT multiple times, which trigger the draw function to draw a few lines in SDL.
+Result showed that there's no output for SDL if the FD is inside the negative loop.
+After considering other possible output, I decided that <SET> will also not work if it is inside a negative for loop.
+I expanded the same test file, and made a nested positive do loop inside a negative do loop.
+    DO A FROM 1 TO -1 {
+       DO B FROM 1 TO 10 {
+I also made one which has a negative do loop nested inside a positive do loop.
+    DO A FROM 1 TO 10 {
+       DO B FROM 1 TO -1 {
+Result showed that the scope of the do loop are clear and not fixed up, as for the first example, nothing was ran at all,
+but for the second things that are not inside the inner do loop still did ran.
+This showed that the last line of the function, which reset the t.draw for the DO loop scope did worked.
+
+void calculate(Stack* s, char op)
+This function calculates using the numbers inside the stack and the operator input.
+As isOp was used to check for the op input, we do not have to worry about unexpected op value here.
+I specifically made a text file that had a calculation that involves dividing by 0 to see if the error check worked.
+Result showed that divided by 0 did interrupted the code and it exited with the error shown.
+Pop and Push function from stack.c was used here.
+The method of calculating postfix notation was popping 2 off the stacks, and using the operator on them.
+I initially tested the switch statement of the function by inserting printf statement inside each switch case.
+To make sure this function works as a whole, we have to first test the Pop and Push function.
+These tests are detailed below. They are tested before testing the calulate function as a whole.
+
+-------------------------------------
+Below are functions inside stack.c
+They are exclusively for pushing and poping things from stack
+----------------------------------------
+
+void Push(Stack* s)
+This function push things to the stack.
+I tested this function seperately in the test.c function by copy and pasting it in.
+I called the push function 5 times inside test.c and compiled it with -g flag.
+In gdb, I displayed the top of the stack (stk[s->top).
+After each time the push function was executed, I saw that the top of the stack goes up by one.
+
+void Pop(Stack* s)
+This function pop things from the stack.
+As Push and Pop works together, I tested them together as well.
+First, multiiple Push function was called, then the Pop.
+Result showed that Pop was popping the last Push value, which means that these 2 functions are working as a stack datatype as intended.
+I also tried to test my error handling by Pop without Push. 
+Sure enough, error statement was printed out and the program exited.
+
+
+
+
